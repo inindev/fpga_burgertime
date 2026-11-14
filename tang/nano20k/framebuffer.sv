@@ -61,16 +61,27 @@ module framebuffer #(
     // debug (clk_sd): a group was not written in time (sticky)
     output logic        overrun,
 
-    // SDRAM pins
+    // SDRAM pins: the Nano 20K's embedded 32-bit SDRAM (sdram.v), or with SDRAM16 the
+    // 16-bit Tang SDRAM module (sdram16.v, no CKE pin)
+`ifdef SDRAM16
+    inout  wire  [15:0] sdram_dq,
+    output logic [12:0] sdram_a,
+    output logic [1:0]  sdram_ba,
+    output logic [1:0]  sdram_dqm,
+`else
     inout  wire  [31:0] sdram_dq,
     output logic [10:0] sdram_a,
     output logic [1:0]  sdram_ba,
     output logic [3:0]  sdram_dqm,
+`endif
     output logic        sdram_cs_n,
     output logic        sdram_ras_n,
     output logic        sdram_cas_n,
-    output logic        sdram_we_n,
+    output logic        sdram_we_n
+`ifndef SDRAM16
+    ,
     output logic        sdram_cke
+`endif
 );
 
     logic        wreq, wack, rreq, rack;
@@ -157,7 +168,11 @@ module framebuffer #(
         end
     end
 
+`ifdef SDRAM16
+    sdram16 u_sdram (
+`else
     sdram u_sdram (
+`endif
         .clk        (clk_sd),
         .resetn     (resetn),
         .rd         (sd_rd),
@@ -175,8 +190,11 @@ module framebuffer #(
         .sdram_cs_n (sdram_cs_n),
         .sdram_ras_n(sdram_ras_n),
         .sdram_cas_n(sdram_cas_n),
-        .sdram_we_n (sdram_we_n),
+        .sdram_we_n (sdram_we_n)
+`ifndef SDRAM16
+        ,
         .sdram_cke  (sdram_cke)
+`endif
     );
 
 endmodule
